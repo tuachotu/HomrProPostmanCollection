@@ -1,0 +1,44 @@
+# Environment-specific files with sensitive data
+*.postman_environment.json.backup
+*.postman_environment.json.bak
+
+# Postman generated files
+.postman/
+postman_collection_backup.json
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Node modules (if any)
+node_modules/
+
+# Environment variables (if using .env files)
+.env
+.env.local
+.env.*.local
+
+# Personal notes
+NOTES.md
+TODO.md

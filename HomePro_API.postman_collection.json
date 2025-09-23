@@ -1,0 +1,475 @@
+{
+  "info": {
+    "name": "HomePro Backend API",
+    "description": "HomePro Backend API for managing homes, home items, photos, support requests, and users.\n\nThis collection includes Firebase JWT authentication and supports both local and dev environments.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{firebase_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Firebase Authentication Pre-request Script",
+          "// This script automatically generates a Firebase JWT token if needed",
+          "",
+          "const firebaseApiKey = pm.environment.get('firebase_api_key');",
+          "const firebaseEmail = pm.environment.get('firebase_email');",
+          "const firebasePassword = pm.environment.get('firebase_password');",
+          "const currentToken = pm.environment.get('firebase_token');",
+          "const tokenExpiry = pm.environment.get('firebase_token_expiry');",
+          "",
+          "// Check if we need a new token",
+          "const now = Date.now();",
+          "const needNewToken = !currentToken || !tokenExpiry || now >= parseInt(tokenExpiry);",
+          "",
+          "if (needNewToken && firebaseApiKey && firebaseEmail && firebasePassword) {",
+          "    console.log('Getting new Firebase token...');",
+          "    ",
+          "    const authRequest = {",
+          "        url: `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,",
+          "        method: 'POST',",
+          "        header: {",
+          "            'Content-Type': 'application/json'",
+          "        },",
+          "        body: {",
+          "            mode: 'raw',",
+          "            raw: JSON.stringify({",
+          "                email: firebaseEmail,",
+          "                password: firebasePassword,",
+          "                returnSecureToken: true",
+          "            })",
+          "        }",
+          "    };",
+          "    ",
+          "    pm.sendRequest(authRequest, (err, response) => {",
+          "        if (err) {",
+          "            console.error('Firebase auth error:', err);",
+          "            return;",
+          "        }",
+          "        ",
+          "        if (response.code === 200) {",
+          "            const responseJson = response.json();",
+          "            const idToken = responseJson.idToken;",
+          "            const expiresIn = parseInt(responseJson.expiresIn) * 1000; // Convert to milliseconds",
+          "            const expiryTime = Date.now() + expiresIn - 60000; // Refresh 1 minute before expiry",
+          "            ",
+          "            pm.environment.set('firebase_token', idToken);",
+          "            pm.environment.set('firebase_token_expiry', expiryTime.toString());",
+          "            ",
+          "            console.log('Firebase token updated successfully');",
+          "        } else {",
+          "            console.error('Firebase auth failed:', response.text());",
+          "        }",
+          "    });",
+          "} else if (currentToken) {",
+          "    console.log('Using existing Firebase token');",
+          "} else {",
+          "    console.log('Firebase credentials not configured. Please set firebase_api_key, firebase_email, and firebase_password in your environment.');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "User Login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "login"]
+            },
+            "description": "Validates Firebase JWT token and returns user profile with roles."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Homes",
+      "item": [
+        {
+          "name": "Get Homes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/homes?userId={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{user_id}}",
+                  "description": "UUID of the user whose homes to retrieve"
+                }
+              ]
+            },
+            "description": "Retrieves all homes that the authenticated user has access to with statistics."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Home",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Beautiful Home\",\n  \"address\": \"123 Main Street, Anytown, ST 12345\",\n  \"metadata\": {\n    \"type\": \"single_family\",\n    \"year_built\": \"2020\",\n    \"square_footage\": \"2500\",\n    \"bedrooms\": \"4\",\n    \"bathrooms\": \"3\",\n    \"garage\": \"2_car\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/homes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes"]
+            },
+            "description": "Creates a new home for the authenticated user. Users are restricted to owning only ONE home."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Home",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/homes/{{home_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes", "{{home_id}}"]
+            },
+            "description": "Permanently deletes a home and all associated data including photos and items."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Home Items",
+      "item": [
+        {
+          "name": "Get Home Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/homes/{{home_id}}/items?limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes", "{{home_id}}", "items"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "appliance",
+                  "description": "Filter by item type",
+                  "disabled": true
+                },
+                {
+                  "key": "emergency",
+                  "value": "true",
+                  "description": "Filter by emergency status",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Maximum number of items to return"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of items to skip"
+                }
+              ]
+            },
+            "description": "Retrieves all items within a home with optional filtering."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Home Item - Appliance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kitchen Refrigerator\",\n  \"itemType\": \"appliance\",\n  \"isEmergency\": false,\n  \"data\": \"{\\\"brand\\\": \\\"Samsung\\\", \\\"model\\\": \\\"RF28T5001SG\\\", \\\"purchaseDate\\\": \\\"2023-01-15\\\", \\\"warranty\\\": \\\"2 years\\\"}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/homes/{{home_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes", "{{home_id}}", "items"]
+            },
+            "description": "Creates a new appliance item for a specific home."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Home Item - Emergency Utility",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Water Shutoff Valve\",\n  \"itemType\": \"utility_control\",\n  \"isEmergency\": true,\n  \"data\": \"{\\\"location\\\": \\\"Basement near water heater\\\", \\\"type\\\": \\\"ball valve\\\", \\\"size\\\": \\\"1 inch\\\"}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/homes/{{home_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes", "{{home_id}}", "items"]
+            },
+            "description": "Creates a new emergency utility control item."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Home Item - Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Master Bedroom\",\n  \"itemType\": \"room\",\n  \"isEmergency\": false,\n  \"data\": \"{\\\"size\\\": \\\"200 sq ft\\\", \\\"windows\\\": 2, \\\"flooring\\\": \\\"hardwood\\\"}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/homes/{{home_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes", "{{home_id}}", "items"]
+            },
+            "description": "Creates a new room item."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Home Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/homes/{{home_id}}/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes", "{{home_id}}", "items", "{{item_id}}"]
+            },
+            "description": "Permanently deletes a home item and all its associated photos."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Photos",
+      "item": [
+        {
+          "name": "Get Photos by Home Item",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/photos?homeItemId={{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "photos"],
+              "query": [
+                {
+                  "key": "homeItemId",
+                  "value": "{{item_id}}",
+                  "description": "UUID of the home item"
+                }
+              ]
+            },
+            "description": "Retrieves photos for a specific home item with pre-signed URLs."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Photos by Home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/photos?homeId={{home_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "photos"],
+              "query": [
+                {
+                  "key": "homeId",
+                  "value": "{{home_id}}",
+                  "description": "UUID of the home"
+                }
+              ]
+            },
+            "description": "Retrieves photos for a specific home with pre-signed URLs."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Photo for Home Item",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "description": "Photo file to upload (JPEG, PNG, GIF, WebP)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/photos?homeItemId={{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "photos"],
+              "query": [
+                {
+                  "key": "homeItemId",
+                  "value": "{{item_id}}",
+                  "description": "UUID of the home item to associate photo with"
+                }
+              ]
+            },
+            "description": "Upload a photo and associate it with a specific home item."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Photo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/photos/{{photo_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "photos", "{{photo_id}}"]
+            },
+            "description": "Permanently deletes a specific photo from both database and S3 storage."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Support Requests",
+      "item": [
+        {
+          "name": "Get Support Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/support-requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support-requests"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "open",
+                  "description": "Filter by request status",
+                  "disabled": true
+                },
+                {
+                  "key": "homeId",
+                  "value": "{{home_id}}",
+                  "description": "Filter by home ID",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Retrieves support requests based on user permissions and filters."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Support Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeId\": \"{{home_id}}\",\n  \"title\": \"Kitchen Sink Leak Repair\",\n  \"description\": \"Main shutoff valve under kitchen sink is leaking. Need urgent repair.\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/support-requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support-requests"]
+            },
+            "description": "Creates a new support request for home services."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "{{protocol}}://{{host}}:{{port}}",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "string",
+      "description": "Example user UUID - replace with actual user ID"
+    },
+    {
+      "key": "home_id",
+      "value": "ace55e40-b56d-43c1-b738-5eee8f1ccdf1",
+      "type": "string",
+      "description": "Example home UUID - replace with actual home ID"
+    },
+    {
+      "key": "item_id",
+      "value": "d26d981c-0c6e-41ae-b9f9-8a9ad6e66c94",
+      "type": "string",
+      "description": "Example item UUID - replace with actual item ID"
+    },
+    {
+      "key": "photo_id",
+      "value": "photo-uuid-1",
+      "type": "string",
+      "description": "Example photo UUID - replace with actual photo ID"
+    }
+  ]
+}
