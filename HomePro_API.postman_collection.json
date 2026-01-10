@@ -381,6 +381,29 @@
             "description": "Permanently deletes a specific photo from both database and S3 storage."
           },
           "response": []
+        },
+        {
+          "name": "Update Photo Primary Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isPrimary\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/photos/{{photo_id}}/primary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "photos", "{{photo_id}}", "primary"]
+            },
+            "description": "Updates a photo's primary status for its associated context (home item, home, or user). Only one photo per context can be marked as primary at any given time."
+          },
+          "response": []
         }
       ]
     },
