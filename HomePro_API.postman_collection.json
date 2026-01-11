@@ -1,5 +1,6 @@
 {
   "info": {
+    "_postman_id": "51f5dea6-e762-4cc4-80fb-7188a9aea929",
     "name": "HomePro Backend API",
     "description": "HomePro Backend API for managing homes, home items, photos, support requests, and users.\n\nThis collection includes Firebase JWT authentication and supports both local and dev environments.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -162,6 +163,20 @@
             "description": "Permanently deletes a home and all associated data including photos and items."
           },
           "response": []
+        },
+        {
+          "name": "CORS Preflight - Homes",
+          "request": {
+            "method": "OPTIONS",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/homes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes"]
+            },
+            "description": "Handles CORS preflight requests for the homes endpoint. Browsers automatically send this request before actual GET/POST requests."
+          },
+          "response": []
         }
       ]
     },
@@ -288,6 +303,20 @@
             "description": "Permanently deletes a home item and all its associated photos."
           },
           "response": []
+        },
+        {
+          "name": "CORS Preflight - Home Items",
+          "request": {
+            "method": "OPTIONS",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/homes/{{home_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "homes", "{{home_id}}", "items"]
+            },
+            "description": "Handles CORS preflight requests for the home items endpoint. Browsers automatically send this request before actual POST requests."
+          },
+          "response": []
         }
       ]
     },
@@ -404,6 +433,215 @@
             "description": "Updates a photo's primary status for its associated context (home item, home, or user). Only one photo per context can be marked as primary at any given time."
           },
           "response": []
+        },
+        {
+          "name": "CORS Preflight - Photos",
+          "request": {
+            "method": "OPTIONS",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/photos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "photos"],
+              "query": [
+                {
+                  "key": "homeId",
+                  "value": "{{home_id}}",
+                  "description": "UUID of the home (for preflight validation)",
+                  "disabled": true
+                },
+                {
+                  "key": "homeItemId",
+                  "value": "{{item_id}}",
+                  "description": "UUID of the home item (for preflight validation)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Handles CORS preflight requests for photo endpoints. Browsers automatically send this request before actual GET/POST requests."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notes",
+      "item": [
+        {
+          "name": "Get Notes by Home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notes?homeId={{home_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes"],
+              "query": [
+                {
+                  "key": "homeId",
+                  "value": "{{home_id}}",
+                  "description": "UUID of the home (mutually exclusive with homeItemId)"
+                }
+              ]
+            },
+            "description": "Retrieves all notes for a specific home. User must be a homeowner OR have expert role. Results ordered by created_at DESC."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Notes by Home Item",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notes?homeItemId={{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes"],
+              "query": [
+                {
+                  "key": "homeItemId",
+                  "value": "{{item_id}}",
+                  "description": "UUID of the home item (mutually exclusive with homeId)"
+                }
+              ]
+            },
+            "description": "Retrieves all notes for a specific home item. User must be a homeowner OR have expert role. Results ordered by created_at DESC."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Note - Home Observation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeId\": \"{{home_id}}\",\n  \"title\": \"Kitchen Remodel Ideas\",\n  \"body\": \"Consider replacing the countertops with quartz. Also check cabinet hinges.\",\n  \"noteType\": \"observation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes"]
+            },
+            "description": "Creates an observation note for a home. User must be a homeowner of the home OR have expert role."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Note - Home Item Todo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeItemId\": \"{{item_id}}\",\n  \"title\": \"Replace filter\",\n  \"body\": \"HVAC filter needs replacement - buy 16x20x1 MERV 11\",\n  \"noteType\": \"todo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes"]
+            },
+            "description": "Creates a todo note for a home item. User must be a homeowner of the home OR have expert role."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Note - Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeItemId\": \"{{item_id}}\",\n  \"body\": \"Should we repair or replace this water heater?\",\n  \"noteType\": \"question\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes"]
+            },
+            "description": "Creates a question note for a home item. User must be a homeowner of the home OR have expert role."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Note",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Title\",\n  \"body\": \"Updated body content\",\n  \"noteType\": \"todo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notes/{{note_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes", "{{note_id}}"]
+            },
+            "description": "Updates an existing note's title, body, and/or noteType. User must be a homeowner of the home OR have expert role."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Note",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notes/{{note_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes", "{{note_id}}"]
+            },
+            "description": "Soft deletes a note by setting the deleted_at timestamp. User must be a homeowner of the home OR have expert role."
+          },
+          "response": []
+        },
+        {
+          "name": "Pin Note",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notes/{{note_id}}/pin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes", "{{note_id}}", "pin"]
+            },
+            "description": "Marks a note as pinned. Multiple notes can be pinned per home/home item. Idempotent operation."
+          },
+          "response": []
+        },
+        {
+          "name": "Unpin Note",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notes/{{note_id}}/unpin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes", "{{note_id}}", "unpin"]
+            },
+            "description": "Removes the pinned status from a note. Idempotent operation."
+          },
+          "response": []
         }
       ]
     },
@@ -493,6 +731,12 @@
       "value": "photo-uuid-1",
       "type": "string",
       "description": "Example photo UUID - replace with actual photo ID"
+    },
+    {
+      "key": "note_id",
+      "value": "note-uuid-1",
+      "type": "string",
+      "description": "Example note UUID - replace with actual note ID"
     }
   ]
 }
